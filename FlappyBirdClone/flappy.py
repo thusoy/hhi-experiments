@@ -4,6 +4,8 @@ import sys
 import threading
 
 import pygame
+import serial
+import time
 from pygame.locals import *
 
 
@@ -53,6 +55,24 @@ PIPES_LIST = (
 )
 
 def watch_muscle():
+    minimum_event_interval = 0.2
+    minimum_reading = 100
+    with serial.Serial('/dev/tty.usbmodem1411', 9600) as port:
+        line_read = []
+        last_event_generated_at = time.time()
+        while True:
+            last_data_read = port.read(5)
+            for character in last_data_read:
+                if character == '\n':
+                    value = int(''.join(line_read).strip())
+                    above_minimum_reading = value > minimum_reading
+                    is_new_event = time.time() - last_event_generated_at > minimum_event_interval
+                    if above_minimum_reading and is_new_event:
+                        event = pygame.event.Event(MUSCLE_ACTIVITY, reading=value)
+                        pygame.event.post(event)
+                    line_read = []
+                else:
+                    line_read.append(character)
 
 
 def start_muscle_watch_thread():
@@ -174,6 +194,13 @@ def showWelcomeAnimation():
                     'basex': basex,
                     'playerIndexGen': playerIndexGen,
                 }
+            elif event.type == MUSCLE_ACTIVITY:
+                SOUNDS['wing'].play()
+                return {
+                    'playery': playery + playerShmVals['val'],
+                    'basex': basex,
+                    'playerIndexGen': playerIndexGen,
+                }
 
         # adjust playery, playerIndex, basex
         if (loopIter + 1) % 5 == 0:
@@ -191,6 +218,10 @@ def showWelcomeAnimation():
 
         pygame.display.update()
         FPSCLOCK.tick(FPS)
+
+
+def translate_muscle_reading_to_vel_y(reading):
+    return -1*(reading/75)
 
 
 def mainGame(movementInfo):
@@ -229,18 +260,20 @@ def mainGame(movementInfo):
 
 
     while True:
-        muscle_reading = random.randint(0, 1000)
-        if muscle_reading > 850:
-
         for event in pygame.event.get():
             if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
                 pygame.quit()
                 sys.exit()
-            if event.type == KEYDOWN and (event.key == K_SPACE or event.key == K_UP):
+            elif event.type == KEYDOWN and (event.key == K_SPACE or event.key == K_UP):
                 if playery > -2 * IMAGES['player'][0].get_height():
                     playerVelY = playerFlapAcc
                     playerFlapped = True
                     SOUNDS['wing'].play()
+            elif event.type == MUSCLE_ACTIVITY:
+                print('Got muscle event at %s' % event.reading)
+                SOUNDS['wing'].play()
+                playerVelY = translate_muscle_reading_to_vel_y(event.reading)
+                playerFlapped = True
 
         # check for crash here
         crashTest = checkCrash({'x': playerx, 'y': playery, 'index': playerIndex},
@@ -334,6 +367,9 @@ def showGameOverScreen(crashInfo):
                 pygame.quit()
                 sys.exit()
             if event.type == KEYDOWN and (event.key == K_SPACE or event.key == K_UP):
+                if playery + playerHeight >= BASEY - 1:
+                    return
+            elif event.type == MUSCLE_ACTIVITY:
                 if playery + playerHeight >= BASEY - 1:
                     return
 
