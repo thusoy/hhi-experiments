@@ -437,13 +437,15 @@ def showScore(score):
 
 
 def checkCrash(player, upperPipes, lowerPipes):
-    """returns True if player collders with base or pipes."""
+    """returns True if player collders with base or pipes or hits the roof"""
     pi = player['index']
     player['w'] = IMAGES['player'][0].get_width()
     player['h'] = IMAGES['player'][0].get_height()
 
     # if player crashes into ground
     if player['y'] + player['h'] >= BASEY - 1:
+        return [True, True]
+    elif player['y'] - player['h']/2 < 0:
         return [True, True]
     else:
 
