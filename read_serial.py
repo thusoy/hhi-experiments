@@ -4,9 +4,7 @@ from __future__ import print_function
 
 import serial
 import json
-import os
 import time
-import sys
 
 def main():
     values = []
