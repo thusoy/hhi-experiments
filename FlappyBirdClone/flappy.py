@@ -2,12 +2,25 @@ from itertools import cycle
 import random
 import sys
 import threading
-
+import os
 import pygame
 import serial
 import time
+
+import shelve
+from birdy.twitter import UserClient
+
 from pygame.locals import *
 
+CONSUMER_KEY = 'gU90Ph9KvpUhWerI8u7Wei5rz'
+CONSUMER_SECRET = 'WhuhtrgCtsOAHxSQ2EXA1RYY8ClSm44WkHR2hhuJs4Gsxl1PHc'
+ACCESS_TOKEN = '4889176491-swAd6fQDbLibzG4ule2tiYuuLA5Cob6eGvIVQdb'
+ACCESS_TOKEN_SECRET = 'TwcEFbU5jTOW6iOsRIk6RGYRSBGJl7p0QbKJPGGpQS1L7'
+
+twitter_client = UserClient(CONSUMER_KEY,
+                   CONSUMER_SECRET,
+                   ACCESS_TOKEN,
+                   ACCESS_TOKEN_SECRET)
 
 FPS = 30
 SCREENWIDTH  = 288
@@ -54,6 +67,8 @@ PIPES_LIST = (
     'assets/sprites/pipe-red.png',
 )
 
+highscore = 0
+
 input_thread = None
 class StoppableThread(threading.Thread):
     """Thread class with a stop() method. The thread itself has to check
@@ -97,6 +112,16 @@ def start_muscle_watch_thread():
 
 
 def main():
+    db = shelve.open('score')
+
+    try:
+        global highscore
+        highscore = db['score']
+    except Exception, e:
+        print("Couldn't find previous highscore")
+
+    db.close()
+
     start_muscle_watch_thread()
     global SCREEN, FPSCLOCK
     pygame.init()
@@ -365,6 +390,17 @@ def mainGame(movementInfo):
 def showGameOverScreen(crashInfo):
     """crashes the player down ans shows gameover image"""
     score = crashInfo['score']
+    global highscore
+    # print("Highscore: %d" % highscore)
+
+    if score > highscore:
+        db = shelve.open('score') # here you will save the score variable   
+        db['score'] = score           # thats all, now it is saved on disk.
+        highscore = score
+        # print(db['score'])
+        twitter_client.api.statuses.update.post(status='I just flexed a new highscore of %d in #NeuroFlappy' % score)
+        db.close()
+
     playerx = SCREENWIDTH * 0.2
     playery = crashInfo['y']
     playerHeight = IMAGES['player'][0].get_height()
