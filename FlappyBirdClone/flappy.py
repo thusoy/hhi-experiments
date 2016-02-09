@@ -54,13 +54,28 @@ PIPES_LIST = (
     'assets/sprites/pipe-red.png',
 )
 
+input_thread = None
+class StoppableThread(threading.Thread):
+    """Thread class with a stop() method. The thread itself has to check
+    regularly for the stopped() condition."""
+
+    def __init__(self, **kwargs):
+        super(StoppableThread, self).__init__(**kwargs)
+        self._stop = threading.Event()
+
+    def stop(self):
+        self._stop.set()
+
+    def stopped(self):
+        return self._stop.isSet()
+
 def watch_muscle():
     minimum_event_interval = 0.2
     minimum_reading = 100
     with serial.Serial('/dev/tty.usbmodem1411', 9600) as port:
         line_read = []
         last_event_generated_at = time.time()
-        while True:
+        while not input_thread.stopped():
             last_data_read = port.read(5)
             for character in last_data_read:
                 if character == '\n':
@@ -76,7 +91,8 @@ def watch_muscle():
 
 
 def start_muscle_watch_thread():
-    input_thread = threading.Thread(target=watch_muscle)
+    global input_thread
+    input_thread = StoppableThread(target=watch_muscle)
     input_thread.start()
 
 
@@ -184,6 +200,7 @@ def showWelcomeAnimation():
     while True:
         for event in pygame.event.get():
             if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
+                input_thread.stop()
                 pygame.quit()
                 sys.exit()
             if event.type == KEYDOWN and (event.key == K_SPACE or event.key == K_UP):
@@ -262,6 +279,8 @@ def mainGame(movementInfo):
     while True:
         for event in pygame.event.get():
             if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
+                input_thread.stop()
+                input_thread.join()
                 pygame.quit()
                 sys.exit()
             elif event.type == KEYDOWN and (event.key == K_SPACE or event.key == K_UP):
