@@ -11,6 +11,7 @@ Servo ServoGripper; //Declares the Name of the Servo to be ServoGripper -- this 
 
 int reading[10];
 int finalReading;
+String readString;
 int StimPin = 3; // TENS Digital 3
 int GripPin = 2; //Digital Out that controls Servo Motor Gripper Hand
 int MAX = 0;
@@ -20,6 +21,7 @@ byte leds[] = {8, 9, 10, 11, 12, 13};
 int aQ1 = 11;
 int aQ2 = 13;
 int aQ3 = 8;
+char lastChar = ' ';
 
 const int UpdateTime = 200; // (number of milliseconds between updating servo position -- if too low you will burn motor out)
 unsigned long OldTime = 0;
@@ -38,17 +40,23 @@ void setup(){
 }
 
 void loop(){
-    // take ten readings in ~0.02 seconds
-    for(int i = 0; i < 10; i++){
-        reading[i] = analogRead(A0) * multiplier;
-        delay(2);
+    // Read value to apply from serial
+    // Read until newline
+    delay(10);  //delay to allow buffer to fill
+    while (Serial.available()) {
+        if (Serial.available() >0) {
+            char c = Serial.read();  //gets one byte from serial buffer
+            if (c == '\n') {
+                break;
+            }
+            readString += c; //makes the string readString
+        }
     }
+    // Parse the value read from serial to int
+    finalReading = readString.toInt();
 
-    // average the ten readings
-    for(int i = 0; i < 10; i++){
-        finalReading += reading[i];
-    }
-    finalReading /= 10;
+    // Reset the string read for next iteration in the loop
+    readString = "";
 
     // write all LEDs low and stim pin low
     for(int j = 0; j < NUM_LED; j++){
@@ -77,5 +85,6 @@ void loop(){
         OldTime = millis();
         old_degrees = new_degrees;
     }
+
 }
 
