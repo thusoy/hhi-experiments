@@ -12,11 +12,7 @@ Servo ServoGripper; //Declares the Name of the Servo to be ServoGripper -- this 
 int reading[10];
 int finalReading;
 int StimPin = 3; // TENS Digital 3
-int SwitchPin = 4;   // pushbutton connected to digital pin 4 -  this will momentarily turn on TENS
-int SwitchThreshold = 7; //pushbutton connected to digital pin 7 - this will switch thresholds
 int GripPin = 2; //Digital Out that controls Servo Motor Gripper Hand
-int SwitchState = 0;
-int SwitchThresholdState = 0;
 int MAX = 0;
 byte litLeds = 0;
 byte multiplier = 1;
@@ -34,41 +30,15 @@ void setup(){
   Serial.begin(9600); //begin serial communications
   ServoGripper.attach(GripPin); //Declare the Servo to be Connected to GripPin
   pinMode(StimPin, OUTPUT); // Set TENS output to StimPin
-  pinMode(SwitchPin, INPUT);      // sets the digital pin 4 as the switch input
-  pinMode(SwitchThreshold, INPUT);      // sets the digital pin 7 as the threshold changer
   for(int i = 0; i < NUM_LED; i++){ //initialize LEDs as outputs
     pinMode(leds[i], OUTPUT);
   pinMode(aQ1, OUTPUT);
-  
+
   }
   MAX = MAX_High; //This sets the default to people with high EMG activity.
-  
-  
 }
 
 void loop(){
-    
-    //note the serial print stuff is sjust debugging tools
-    SwitchThresholdState = digitalRead(SwitchThreshold);
-    if (SwitchThresholdState == HIGH){ // This will allow the switching between a low threshold and high threshold state on S2
-    if (MAX == MAX_High){ MAX = MAX_Low; digitalWrite(aQ3, HIGH);}
-    else{
-     MAX = MAX_High; digitalWrite(aQ2, HIGH); } 
-    while (SwitchThresholdState == HIGH) { // This will pause the program while the person is touching the threshold button, 
-    SwitchThresholdState = digitalRead(SwitchThreshold);  
-    delay(10); }                         // so it doesn't flip back and forth while button is pushed
-    }
-
-    SwitchState = digitalRead(SwitchPin);
-    //Serial.println(SwitchState);
-    if (SwitchState == HIGH){ // This will activate the TENS if the PushButton is pressed on S1
-    digitalWrite(StimPin, HIGH), digitalWrite(aQ1, HIGH);
-    //Serial.println('Stim');
-     while (SwitchState == HIGH) { // This will pause the program while the person is touching TENS test button
-    SwitchState = digitalRead(SwitchPin);  
-    delay(10); }    
-    } 
-  
   for(int i = 0; i < 10; i++){    //take ten readings in ~0.02 seconds
     reading[i] = analogRead(A0) * multiplier;
     delay(2);
@@ -80,21 +50,19 @@ void loop(){
   for(int j = 0; j < NUM_LED; j++){  //write all LEDs low and stim pin low
 
     digitalWrite(leds[j], LOW);
-    digitalWrite(StimPin, LOW); 
+    digitalWrite(StimPin, LOW);
   }
   Serial.println(finalReading);
-  //Serial.print("\t");
   finalReading = constrain(finalReading, 0, MAX);
   litLeds = map(finalReading, 0, MAX, 0, NUM_LED);
-  //Serial.println(litLeds);
-  
+
   for(int k = 0; k < litLeds; k++){
     digitalWrite(leds[k], HIGH); // This turns on the LEDS
     if (k >= Threshold){
       digitalWrite(StimPin, HIGH); // This turns on the TENS as a function of which LED is lit
-    } 
+    }
   }
-  
+
   new_degrees = map(finalReading, 0 ,MAX, 165, 0); //Translate the analog reading to degrees for the servo (from 165° to 0°).
 
 if (millis() - OldTime > UpdateTime){
@@ -103,10 +71,6 @@ if (millis() - OldTime > UpdateTime){
   }
   OldTime = millis();
   old_degrees = new_degrees;
-}  
-   //delay(10);
-  //for serial debugging, uncomment the next two lines.
-  //Serial.println(finalReading);
-  //delay(100);
 }
-    
+}
+
