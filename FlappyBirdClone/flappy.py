@@ -12,9 +12,9 @@ from birdy.twitter import UserClient
 
 from pygame.locals import *
 
-CONSUMER_KEY = 'gU90Ph9KvpUhWerI8u7Wei5rz'
+CONSUMER_KEY = 'EmwQewB82eqH0uBAObgRp1I4b'
 CONSUMER_SECRET = os.environ['TWITTER_CONSUMER_SECRET']
-ACCESS_TOKEN = '4889176491-swAd6fQDbLibzG4ule2tiYuuLA5Cob6eGvIVQdb'
+ACCESS_TOKEN = '4889176491-6qwuvKfAHgxuQHqOV6Qpl2Axju4OtEaSMiTbd73'
 ACCESS_TOKEN_SECRET = os.environ['TWITTER_ACCESS_TOKEN_SECRET']
 
 twitter_client = UserClient(CONSUMER_KEY,
