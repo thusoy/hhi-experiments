@@ -42,7 +42,7 @@ void setup(){
 void loop(){
     // Read value to apply from serial
     // Read until newline
-    delay(10);  //delay to allow buffer to fill
+    delay(20);  //delay to allow buffer to fill
     while (Serial.available()) {
         if (Serial.available() >0) {
             char c = Serial.read();  //gets one byte from serial buffer
