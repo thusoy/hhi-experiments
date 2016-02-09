@@ -27,50 +27,55 @@ int old_degrees = 0;
 int new_degrees = 0;
 
 void setup(){
-  Serial.begin(9600); //begin serial communications
-  ServoGripper.attach(GripPin); //Declare the Servo to be Connected to GripPin
-  pinMode(StimPin, OUTPUT); // Set TENS output to StimPin
-  for(int i = 0; i < NUM_LED; i++){ //initialize LEDs as outputs
-    pinMode(leds[i], OUTPUT);
-  pinMode(aQ1, OUTPUT);
-
-  }
-  MAX = MAX_High; //This sets the default to people with high EMG activity.
+    Serial.begin(9600); //begin serial communications
+    ServoGripper.attach(GripPin); //Declare the Servo to be Connected to GripPin
+    pinMode(StimPin, OUTPUT); // Set TENS output to StimPin
+    for(int i = 0; i < NUM_LED; i++){ //initialize LEDs as outputs
+        pinMode(leds[i], OUTPUT);
+        pinMode(aQ1, OUTPUT);
+    }
+    MAX = MAX_High; //This sets the default to people with high EMG activity.
 }
 
 void loop(){
-  for(int i = 0; i < 10; i++){    //take ten readings in ~0.02 seconds
-    reading[i] = analogRead(A0) * multiplier;
-    delay(2);
-  }
-  for(int i = 0; i < 10; i++){   //average the ten readings
-    finalReading += reading[i];
-  }
-  finalReading /= 10;
-  for(int j = 0; j < NUM_LED; j++){  //write all LEDs low and stim pin low
-
-    digitalWrite(leds[j], LOW);
-    digitalWrite(StimPin, LOW);
-  }
-  Serial.println(finalReading);
-  finalReading = constrain(finalReading, 0, MAX);
-  litLeds = map(finalReading, 0, MAX, 0, NUM_LED);
-
-  for(int k = 0; k < litLeds; k++){
-    digitalWrite(leds[k], HIGH); // This turns on the LEDS
-    if (k >= Threshold){
-      digitalWrite(StimPin, HIGH); // This turns on the TENS as a function of which LED is lit
+    // take ten readings in ~0.02 seconds
+    for(int i = 0; i < 10; i++){
+        reading[i] = analogRead(A0) * multiplier;
+        delay(2);
     }
-  }
 
-  new_degrees = map(finalReading, 0 ,MAX, 165, 0); //Translate the analog reading to degrees for the servo (from 165° to 0°).
+    // average the ten readings
+    for(int i = 0; i < 10; i++){
+        finalReading += reading[i];
+    }
+    finalReading /= 10;
 
-if (millis() - OldTime > UpdateTime){
-  if(abs(new_degrees-old_degrees) > threshold_degrees){
-    ServoGripper.write(new_degrees); //Move the servo according to the degrees calculated
-  }
-  OldTime = millis();
-  old_degrees = new_degrees;
-}
+    // write all LEDs low and stim pin low
+    for(int j = 0; j < NUM_LED; j++){
+        digitalWrite(leds[j], LOW);
+        digitalWrite(StimPin, LOW);
+    }
+
+    Serial.println(finalReading);
+    finalReading = constrain(finalReading, 0, MAX);
+    litLeds = map(finalReading, 0, MAX, 0, NUM_LED);
+
+    for (int k = 0; k < litLeds; k++) {
+        digitalWrite(leds[k], HIGH); // This turns on the LEDS
+        if (k >= Threshold) {
+            digitalWrite(StimPin, HIGH); // This turns on the TENS as a function of which LED is lit
+        }
+    }
+
+    // Translate the analog reading to degrees for the servo (from 165° to 0°).
+    new_degrees = map(finalReading, 0 ,MAX, 165, 0);
+
+    if (millis() - OldTime > UpdateTime) {
+        if(abs(new_degrees-old_degrees) > threshold_degrees) {
+            ServoGripper.write(new_degrees); //Move the servo according to the degrees calculated
+        }
+        OldTime = millis();
+        old_degrees = new_degrees;
+    }
 }
 
